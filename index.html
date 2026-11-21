@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Contact Book</title>
+<style>
+:root{--ink:#192238;--muted:#69748a;--line:#e6eaf2;--purple:#5b5ce2;--bg:#f4f6fc}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:linear-gradient(120deg,#3436a8,#7774f5);color:white;padding:30px 20px 65px}
+.wrap{width:min(1080px,calc(100% - 32px));margin:auto}.brand{font-size:21px;font-weight:800}.hero{margin-top:25px}.hero h1{font-size:clamp(28px,5vw,42px);margin:0 0 7px}.hero p{margin:0;color:#e5e6ff}
+main{margin-top:-38px;padding-bottom:45px}.stats{display:flex;gap:14px;margin-bottom:16px}.stat,.panel{background:white;border:1px solid var(--line);border-radius:17px;box-shadow:0 10px 30px #26345b0b}.stat{padding:15px 20px;flex:1}.stat b{font-size:25px;display:block}.stat span,.muted{color:var(--muted);font-size:13px}
+.layout{display:grid;grid-template-columns:minmax(270px,.8fr) minmax(0,1.5fr);gap:17px;align-items:start}.panel{padding:21px}h2{font-size:18px;margin:0 0 15px}
+label{display:block;font-size:13px;font-weight:650;margin:12px 0 5px}input,textarea{width:100%;padding:11px 12px;border:1px solid #dce2ed;border-radius:10px;font:inherit;outline:none}input:focus,textarea:focus{border-color:var(--purple);box-shadow:0 0 0 3px #5b5ce21a}textarea{min-height:70px;resize:vertical}
+button,.btn{border:0;border-radius:10px;padding:10px 14px;background:var(--purple);color:white;font:inherit;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;justify-content:center;align-items:center}
+.full{width:100%;margin-top:16px}.search{display:flex;gap:8px;margin-bottom:14px}.search input{flex:1;min-width:0}
+.contact{display:flex;gap:12px;border:1px solid var(--line);border-radius:13px;padding:14px;margin-top:10px}.avatar{width:41px;height:41px;flex:0 0 41px;border-radius:13px;background:#eeeefe;color:#5052c9;display:grid;place-items:center;font-weight:800}.details{min-width:0;flex:1}.name{font-weight:800;margin-bottom:5px}.meta{font-size:13px;color:var(--muted);line-height:1.65;overflow-wrap:anywhere}.actions{display:flex;gap:7px;margin-top:9px}.small{font-size:12px;padding:7px 10px}.edit{background:#eef0ff;color:#4547bc}.delete{background:#fff0f0;color:#b42318}.flash{padding:10px;border-radius:9px;margin-bottom:10px;font-size:13px}.success{background:#eaf8ef;color:#176b37}.error{background:#fff0f0;color:#a52222}.empty{text-align:center;padding:35px 10px;color:var(--muted)}
+dialog{width:min(500px,calc(100% - 28px));border:0;border-radius:17px;padding:22px;box-shadow:0 20px 80px #11182744}dialog::backdrop{background:#10172a88}.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}.cancel{background:#eef0f5;color:#394150}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:0 15px 25px}
+@media(max-width:740px){.layout{grid-template-columns:1fr}.panel{padding:17px}}@media(max-width:420px){.search{flex-wrap:wrap}.search input{flex-basis:100%}}
+</style></head>
+<body>
+<header><div class="wrap"><div class="brand">▣ &nbsp; Contact Book</div><div class="hero"><h1>Your people, in one place.</h1><p>Save, find and manage your important contacts with ease.</p></div></div></header>
+<main class="wrap">
+<div class="stats"><div class="stat"><b>{{ total }}</b><span>Total contacts</span></div><div class="stat"><b>⌕</b><span>Search by name, phone or email</span></div></div>
+<div class="layout">
+<section class="panel"><h2>＋ Add a contact</h2>
+{% with messages = get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}
+<form action="{{ url_for('add') }}" method="post">
+<label>Full name *</label><input name="name" required maxlength="100" placeholder="e.g. Alex Morgan">
+<label>Phone number *</label><input name="phone" type="tel" required maxlength="30" placeholder="+91 98765 43210">
+<label>Email address</label><input name="email" type="email" maxlength="120" placeholder="alex@example.com">
+<label>Address</label><input name="address" maxlength="200" placeholder="City or address">
+<label>Notes</label><textarea name="notes" maxlength="1000" placeholder="Anything useful to remember..."></textarea>
+<button class="full" type="submit">＋ Save contact</button></form></section>
+<section class="panel"><h2>Your contacts <span class="muted">({{ contacts|length }} shown)</span></h2>
+<form class="search" method="get"><input name="q" value="{{ query }}" placeholder="Search contacts..."><button>Search</button>{% if query %}<a class="btn" style="background:#eef0f5;color:#394150" href="{{ url_for('index') }}">Clear</a>{% endif %}</form>
+{% if contacts %}{% for c in contacts %}<article class="contact"><div class="avatar">{{ c['name'][0]|upper }}</div><div class="details"><div class="name">{{ c['name'] }}</div><div class="meta">☎ {{ c['phone'] }}</div>{% if c['email'] %}<div class="meta">✉ {{ c['email'] }}</div>{% endif %}{% if c['address'] %}<div class="meta">⌖ {{ c['address'] }}</div>{% endif %}{% if c['notes'] %}<div class="meta">Notes: {{ c['notes'] }}</div>{% endif %}
+<div class="actions"><button class="small edit" type="button" data-id="{{ c['id'] }}" data-name="{{ c['name']|e }}" data-phone="{{ c['phone']|e }}" data-email="{{ c['email']|e }}" data-address="{{ c['address']|e }}" data-notes="{{ c['notes']|e }}" onclick="editContact(this)">Edit</button>
+<form method="post" action="{{ url_for('delete',cid=c['id']) }}" onsubmit="return confirm('Delete this contact?')"><button class="small delete">Delete</button></form></div></div></article>{% endfor %}
+{% else %}<div class="empty"><div style="font-size:32px">👥</div><b>No contacts found</b><div class="muted">{% if query %}Try another search.{% else %}Add your first contact using the form.{% endif %}</div></div>{% endif %}
+</section></div></main>
+<dialog id="editDialog"><h2>Edit contact</h2><form id="editForm" method="post">
+<label>Full name *</label><input id="eName" name="name" required><label>Phone number *</label><input id="ePhone" name="phone" required>
+<label>Email address</label><input id="eEmail" name="email" type="email"><label>Address</label><input id="eAddress" name="address"><label>Notes</label><textarea id="eNotes" name="notes"></textarea>
+<div class="dialog-actions"><button class="cancel" type="button" onclick="document.getElementById('editDialog').close()">Cancel</button><button>Save changes</button></div></form></dialog>
+<footer>Contact Book · Simple, organized contact management</footer>
+<script>
+function editContact(b){document.getElementById('editForm').action='/edit/'+b.dataset.id;
+document.getElementById('eName').value=b.dataset.name;document.getElementById('ePhone').value=b.dataset.phone;
+document.getElementById('eEmail').value=b.dataset.email;document.getElementById('eAddress').value=b.dataset.address;
+document.getElementById('eNotes').value=b.dataset.notes;document.getElementById('editDialog').showModal();}
+</script></body></html>
